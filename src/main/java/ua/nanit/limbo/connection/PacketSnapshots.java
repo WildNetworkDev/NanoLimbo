@@ -97,7 +97,7 @@ public class PacketSnapshots {
         DimensionType dimensionType = server.getConfig().getDimensionType();
         DimensionRegistry dimensionRegistry = server.getDimensionRegistry();
         VersionedDimension versionedDimension = dimensionType.createVersionedDimension(dimensionRegistry);
-        joinGame.setEntityId(0);
+        joinGame.setEntityId(1);
         joinGame.setEnableRespawnScreen(true);
         joinGame.setFlat(false);
         joinGame.setGameMode(server.getConfig().getGameMode());
