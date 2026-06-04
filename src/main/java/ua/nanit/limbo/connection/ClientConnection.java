@@ -65,6 +65,9 @@ public class ClientConnection extends ChannelInboundHandlerAdapter {
     @Setter
     private int velocityLoginMessageId = -1;
 
+    private volatile long fallbackReconnectNextCycleAt;
+    private volatile boolean fallbackReconnectInProgress;
+
     public ClientConnection(@NonNull Channel channel,
                             @NonNull LimboServer server,
                             @NonNull PacketDecoder decoder,
@@ -186,6 +189,10 @@ public class ClientConnection extends ChannelInboundHandlerAdapter {
             }
 
             sendKeepAlive();
+
+            if (server.getConfig().getFallbackReconnect().isEnabled()) {
+                initFallbackReconnect(server.getConfig().getFallbackReconnect().getIntervalSeconds() * 1000L);
+            }
         };
 
         if (clientVersion.lessOrEqual(Version.V1_7_6)) {
@@ -316,6 +323,23 @@ public class ClientConnection extends ChannelInboundHandlerAdapter {
 
     public void setAddress(@NonNull String host) {
         this.address = new InetSocketAddress(host, ((InetSocketAddress) this.address).getPort());
+    }
+
+    public void initFallbackReconnect(long delayMs) {
+        fallbackReconnectNextCycleAt = System.currentTimeMillis() + delayMs;
+        fallbackReconnectInProgress = false;
+    }
+
+    public boolean isFallbackReconnectDue() {
+        return !fallbackReconnectInProgress && System.currentTimeMillis() >= fallbackReconnectNextCycleAt;
+    }
+
+    public void setFallbackReconnectInProgress(boolean inProgress) {
+        fallbackReconnectInProgress = inProgress;
+    }
+
+    public void scheduleFallbackReconnectCycle(long intervalMs) {
+        fallbackReconnectNextCycleAt = System.currentTimeMillis() + intervalMs;
     }
 
 }

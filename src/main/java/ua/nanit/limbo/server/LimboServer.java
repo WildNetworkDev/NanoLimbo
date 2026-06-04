@@ -40,6 +40,7 @@ public final class LimboServer {
     private Connections connections;
     private DimensionRegistry dimensionRegistry;
     private ScheduledFuture<?> keepAliveTask;
+    private FallbackReconnectService fallbackReconnectService;
 
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
@@ -67,6 +68,11 @@ public final class LimboServer {
         startBootstrap();
 
         keepAliveTask = workerGroup.scheduleAtFixedRate(this::broadcastKeepAlive, 0L, 5L, TimeUnit.SECONDS);
+
+        fallbackReconnectService = new FallbackReconnectService(this);
+        if (config.getFallbackReconnect().isEnabled()) {
+            fallbackReconnectService.start(workerGroup);
+        }
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::stop, "NanoLimbo shutdown thread"));
 
@@ -112,6 +118,10 @@ public final class LimboServer {
 
         if (keepAliveTask != null) {
             keepAliveTask.cancel(true);
+        }
+
+        if (fallbackReconnectService != null) {
+            fallbackReconnectService.stop();
         }
 
         if (bossGroup != null) {

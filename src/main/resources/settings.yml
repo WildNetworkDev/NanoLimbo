@@ -108,6 +108,21 @@ infoForwarding:
   tokens:
   - "<BUNGEE_GUARD_TOKEN>"
 
+# Periodically try to send players from limbo to proxy servers (fallback release).
+# Requires BungeeCord or Velocity (infoForwarding must not be NONE).
+# Servers are tried in order; if one fails, the next is tried after attemptTimeout.
+fallbackReconnect:
+  enable: false
+  # Seconds between full reconnect cycles per player
+  interval: 30
+  # Milliseconds to wait after each Connect before trying the next server
+  attemptTimeout: 2500
+  # Proxy server names (must match BungeeCord/Velocity config)
+  servers:
+    - Hub-1
+    - Prison
+    - Survival
+
 # Read timeout for connections in milliseconds
 readTimeout: 30000
 

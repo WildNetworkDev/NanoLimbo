@@ -24,4 +24,7 @@ public class LimboConstants {
 
     public static final String VELOCITY_INFO_CHANNEL = "velocity:player_info";
     public static final String BRAND_CHANNEL = "minecraft:brand";
+
+    public static final String BUNGEECORD_CHANNEL_LEGACY = "BungeeCord";
+    public static final String BUNGEECORD_CHANNEL = "bungeecord:main";
 }

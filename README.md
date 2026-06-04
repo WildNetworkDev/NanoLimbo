@@ -79,6 +79,24 @@ Velocity config into `secret` field.
 If you installed BungeeGuard on your proxy, then use `BUNGEE_GUARD` forwarding type.
 Then add your tokens to `tokens` list.
 
+### Fallback reconnect
+
+When the main network is down, players may sit in limbo until backends return. With `fallbackReconnect` enabled, NanoLimbo periodically tries to send each player to a configured proxy server using the BungeeCord `Connect` plugin message.
+
+Requirements:
+
+* Players must connect through **BungeeCord** or **Velocity** (`infoForwarding` must not be `NONE`).
+* Server names in `fallbackReconnect.servers` must match your proxy config exactly.
+
+Behavior:
+
+* Servers are tried **in order** (e.g. `Hub-1`, then `Prison`, then `Survival`).
+* After each `Connect`, limbo waits `attemptTimeout` milliseconds; if the player is still connected, the next server is tried.
+* If all servers fail, the next full cycle starts after `interval` seconds.
+* The first attempt for a newly joined player happens after one `interval` from spawn.
+
+If every target is offline, players remain in limbo until a cycle succeeds.
+
 ### Credits
 
 This release is built on top of community contributions across multiple forks.

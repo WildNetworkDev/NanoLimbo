@@ -23,14 +23,18 @@ import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.ConfigurationOptions;
+import org.spongepowered.configurate.serialize.SerializationException;
 import org.spongepowered.configurate.serialize.TypeSerializerCollection;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 import ua.nanit.limbo.configuration.serializers.*;
+import ua.nanit.limbo.server.Log;
 import ua.nanit.limbo.server.TransportType;
 import ua.nanit.limbo.server.data.*;
 import ua.nanit.limbo.world.DimensionType;
 
 import java.io.BufferedReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -83,6 +87,8 @@ public final class LimboConfig {
     private double interval;
     private double maxPacketRate;
     private double maxPacketBytesRate;
+
+    private FallbackReconnectSettings fallbackReconnect = FallbackReconnectSettings.disabled();
 
     public void load() throws Exception {
         ConfigurationOptions options = ConfigurationOptions.defaults().serializers(getSerializers());
@@ -142,6 +148,39 @@ public final class LimboConfig {
         interval = conf.node("traffic", "interval").getDouble(-1.0);
         maxPacketRate = conf.node("traffic", "maxPacketRate").getDouble(-1.0);
         maxPacketBytesRate = conf.node("traffic", "maxPacketBytesRate").getDouble(-1.0);
+
+        fallbackReconnect = loadFallbackReconnect(conf);
+    }
+
+    @NonNull
+    private FallbackReconnectSettings loadFallbackReconnect(@NonNull ConfigurationNode conf) throws SerializationException {
+        ConfigurationNode node = conf.node("fallbackReconnect");
+        boolean enable = node.node("enable").getBoolean(false);
+
+        if (!enable) {
+            return FallbackReconnectSettings.disabled();
+        }
+
+        if (infoForwarding.isNone()) {
+            Log.warning("fallbackReconnect is enabled but infoForwarding is NONE; reconnect is disabled");
+            return FallbackReconnectSettings.disabled();
+        }
+
+        int intervalSeconds = node.node("interval").getInt(30);
+        long attemptTimeoutMs = node.node("attemptTimeout").getLong(2500L);
+        List<String> servers = new ArrayList<>(node.node("servers").getList(String.class, List.of()));
+
+        if (intervalSeconds <= 0) {
+            throw new IllegalStateException("fallbackReconnect.interval must be greater than 0");
+        }
+        if (attemptTimeoutMs <= 0) {
+            throw new IllegalStateException("fallbackReconnect.attemptTimeout must be greater than 0");
+        }
+        if (servers.isEmpty()) {
+            throw new IllegalStateException("fallbackReconnect.servers must not be empty when enabled");
+        }
+
+        return new FallbackReconnectSettings(true, intervalSeconds, attemptTimeoutMs, servers);
     }
 
     @NonNull
